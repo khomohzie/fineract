@@ -49,10 +49,12 @@ import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityEx
 import org.apache.fineract.infrastructure.dataqueries.data.EntityTables;
 import org.apache.fineract.infrastructure.dataqueries.data.StatusEnum;
 import org.apache.fineract.infrastructure.dataqueries.service.EntityDatatableChecksWritePlatformService;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanApplicationModifiedBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanApprovedBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanCreatedBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanRejectedBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.domain.loan.LoanUndoApprovalBusinessEvent;
+import org.apache.fineract.infrastructure.event.business.domain.loan.LoanWithdrawnByApplicantBusinessEvent;
 import org.apache.fineract.infrastructure.event.business.service.BusinessEventNotifierService;
 import org.apache.fineract.infrastructure.security.service.PlatformSecurityContext;
 import org.apache.fineract.portfolio.account.domain.AccountAssociationType;
@@ -233,12 +235,13 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             case DAILY -> CalendarFrequencyType.DAILY;
             case WEEKLY -> CalendarFrequencyType.WEEKLY;
             case MONTHLY -> CalendarFrequencyType.MONTHLY;
-            case SAME_AS_REPAYMENT_PERIOD -> CalendarFrequencyType.from(loan.repaymentScheduleDetail().getRepaymentPeriodFrequencyType());
+            case SAME_AS_REPAYMENT_PERIOD ->
+                CalendarFrequencyType.from(loan.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType());
             case INVALID -> CalendarFrequencyType.INVALID;
         };
 
         if (recalculationFrequencyType == SAME_AS_REPAYMENT_PERIOD) {
-            frequency = loan.repaymentScheduleDetail().getRepayEvery();
+            frequency = loan.getLoanProductRelatedDetail().getRepayEvery();
             calendarStartDate = loan.getExpectedDisbursedOnLocalDate();
             if (updatedRepeatsOnDay == null) {
                 updatedRepeatsOnDay = calendarStartDate.get(ChronoField.DAY_OF_WEEK);
@@ -285,6 +288,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                     && changes.containsKey(LoanProductConstants.IS_INTEREST_RECALCULATION_ENABLED_PARAMETER_NAME)) {
                 createAndPersistCalendarInstanceForInterestRecalculation(loan);
             }
+
+            businessEventNotifierService.notifyPostBusinessEvent(new LoanApplicationModifiedBusinessEvent(loan));
 
             return new CommandProcessingResultBuilder() //
                     .withEntityId(loanId) //
@@ -400,12 +405,12 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
                         }
                     }
                 } else {
-                    PeriodFrequencyType repaymentFrequencyType = loan.repaymentScheduleDetail().getRepaymentPeriodFrequencyType();
+                    PeriodFrequencyType repaymentFrequencyType = loan.getLoanProductRelatedDetail().getRepaymentPeriodFrequencyType();
                     if (repaymentFrequencyType == PeriodFrequencyType.MONTHS) {
                         final String title = "loan_schedule_" + loan.getId();
                         final Integer typeId = CalendarType.COLLECTION.getValue();
                         final CalendarFrequencyType calendarFrequencyType = CalendarFrequencyType.MONTHLY;
-                        final Integer interval = loan.repaymentScheduleDetail().getRepayEvery();
+                        final Integer interval = loan.getLoanProductRelatedDetail().getRepayEvery();
                         LocalDate startDate = loan.getExpectedFirstRepaymentOnDate();
                         if (startDate == null) {
                             startDate = loan.getExpectedDisbursedOnLocalDate();
@@ -738,6 +743,8 @@ public class LoanApplicationWritePlatformServiceJpaRepositoryImpl implements Loa
             final String noteText = command.stringValueOfParameterNamed("note");
             createNote(noteText, loan);
         }
+
+        businessEventNotifierService.notifyPostBusinessEvent(new LoanWithdrawnByApplicantBusinessEvent(loan));
 
         return new CommandProcessingResultBuilder() //
                 .withCommandId(command.commandId()) //

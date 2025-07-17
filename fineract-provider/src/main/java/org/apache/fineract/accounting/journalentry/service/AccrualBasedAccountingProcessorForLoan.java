@@ -21,12 +21,10 @@ package org.apache.fineract.accounting.journalentry.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.fineract.accounting.closure.domain.GLClosure;
 import org.apache.fineract.accounting.common.AccountingConstants.AccrualAccountsForLoan;
@@ -36,19 +34,12 @@ import org.apache.fineract.accounting.journalentry.data.ChargePaymentDTO;
 import org.apache.fineract.accounting.journalentry.data.GLAccountBalanceHolder;
 import org.apache.fineract.accounting.journalentry.data.LoanDTO;
 import org.apache.fineract.accounting.journalentry.data.LoanTransactionDTO;
-import org.apache.fineract.accounting.journalentry.domain.JournalEntry;
 import org.apache.fineract.accounting.journalentry.domain.JournalEntryRepository;
 import org.apache.fineract.accounting.producttoaccountmapping.domain.ProductToGLAccountMapping;
-import org.apache.fineract.infrastructure.core.domain.AbstractPersistableCustom;
-import org.apache.fineract.infrastructure.core.exception.PlatformDataIntegrityException;
 import org.apache.fineract.infrastructure.core.service.MathUtil;
 import org.apache.fineract.organisation.office.domain.Office;
 import org.apache.fineract.portfolio.PortfolioProductType;
 import org.apache.fineract.portfolio.loanaccount.data.LoanTransactionEnumData;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanCapitalizedIncomeBalance;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransaction;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelation;
-import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRelationTypeEnum;
 import org.apache.fineract.portfolio.loanaccount.domain.LoanTransactionRepository;
 import org.apache.fineract.portfolio.loanaccount.repository.LoanCapitalizedIncomeBalanceRepository;
 import org.springframework.stereotype.Component;
@@ -154,6 +145,22 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             if (transactionType.isCapitalizedIncomeAmortizationAdjustment()) {
                 createJournalEntriesForCapitalizedIncomeAmortizationAdjustment(loanDTO, loanTransactionDTO, office);
             }
+            // Handle Buy Down Fee
+            if (transactionType.isBuyDownFee()) {
+                createJournalEntriesForBuyDownFee(loanDTO, loanTransactionDTO, office);
+            }
+            // Handle Buy Down Fee Adjustment
+            if (transactionType.isBuyDownFeeAdjustment()) {
+                createJournalEntriesForBuyDownFeeAdjustment(loanDTO, loanTransactionDTO, office);
+            }
+            // Handle Buy Down Fee Amortization
+            if (transactionType.isBuyDownFeeAmortization()) {
+                createJournalEntriesForBuyDownFeeAmortization(loanDTO, loanTransactionDTO, office);
+            }
+            // Handle Buy Down Fee Amortization Adjustment
+            if (transactionType.isBuyDownFeeAmortizationAdjustment()) {
+                createJournalEntriesForBuyDownFeeAmortizationAdjustment(loanDTO, loanTransactionDTO, office);
+            }
         }
     }
 
@@ -246,46 +253,10 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             }
 
             // Resolve Debit
-            GLAccount accountIncomeFromCapitalization = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
-                    AccrualAccountsForLoan.INCOME_FROM_CAPITALIZATION.getValue(), paymentTypeId);
             GLAccount accountDeferredIncome = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
                     AccrualAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(), paymentTypeId);
 
-            Optional<LoanTransaction> transactionOpt = loanTransactionRepository.findById(Long.parseLong(transactionId));
-            if (transactionOpt.isEmpty()) {
-                throw new PlatformDataIntegrityException("transaction.for.accounting.not.found", "Transaction for accounting not found");
-            }
-            Optional<LoanTransactionRelation> relationToOriginalTransactionOpt = transactionOpt.get().getLoanTransactionRelations().stream()//
-                    .filter(rel -> LoanTransactionRelationTypeEnum.REPLAYED.equals(rel.getRelationType()))//
-                    .min(Comparator.comparing(AbstractPersistableCustom::getId));
-            if (relationToOriginalTransactionOpt.isPresent()) {
-                // Reverse-replay case
-                final LoanTransaction originalTransaction = relationToOriginalTransactionOpt.get().getToTransaction();
-                final List<JournalEntry> originalJournalEntries = this.journalEntryRepository.findJournalEntries(
-                        AccountingProcessorHelper.LOAN_TRANSACTION_IDENTIFIER + originalTransaction.getId(),
-                        PortfolioProductType.LOAN.getValue());
-
-                for (JournalEntry originalJournalEntry : originalJournalEntries) {
-                    if (originalJournalEntry.isDebitEntry()) {
-                        if (accountIncomeFromCapitalization.getId().equals(originalJournalEntry.getGlAccount().getId())) {
-                            glAccountBalanceHolder.addToDebit(accountIncomeFromCapitalization, originalJournalEntry.getAmount());
-                        } else if (accountDeferredIncome.getId().equals(originalJournalEntry.getGlAccount().getId())) {
-                            glAccountBalanceHolder.addToDebit(accountDeferredIncome, originalJournalEntry.getAmount());
-                        }
-                    }
-                }
-            } else {
-                LoanCapitalizedIncomeBalance capitalizedIncomeBalance = loanCapitalizedIncomeBalanceRepository
-                        .findBalanceForAdjustment(Long.parseLong(loanTransactionDTO.getTransactionId()));
-                if (MathUtil.isGreaterThan(transactionAmount, capitalizedIncomeBalance.getUnrecognizedAmount())) {
-                    BigDecimal amortizedAmount = transactionAmount.subtract(capitalizedIncomeBalance.getUnrecognizedAmount());
-
-                    glAccountBalanceHolder.addToDebit(accountIncomeFromCapitalization, amortizedAmount);
-                    glAccountBalanceHolder.addToDebit(accountDeferredIncome, transactionAmount.subtract(amortizedAmount));
-                } else {
-                    glAccountBalanceHolder.addToDebit(accountDeferredIncome, transactionAmount);
-                }
-            }
+            glAccountBalanceHolder.addToDebit(accountDeferredIncome, transactionAmount);
         }
 
         // create credit entries
@@ -437,6 +408,199 @@ public class AccrualBasedAccountingProcessorForLoan implements AccountingProcess
             populateCreditDebitMaps(loanDTO.getLoanProductId(), loanTransactionDTO.getAmount(), loanTransactionDTO.getPaymentTypeId(),
                     AccrualAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(),
                     AccrualAccountsForLoan.INCOME_FROM_CAPITALIZATION.getValue(), glAccountBalanceHolder);
+        }
+
+        // create credit entries
+        for (Map.Entry<Long, BigDecimal> creditEntry : glAccountBalanceHolder.getCreditBalances().entrySet()) {
+            if (MathUtil.isGreaterThanZero(creditEntry.getValue())) {
+                GLAccount glAccount = glAccountBalanceHolder.getGlAccountMap().get(creditEntry.getKey());
+                this.helper.createCreditJournalEntryForLoan(office, loanDTO.getCurrencyCode(), loanDTO.getLoanId(),
+                        loanTransactionDTO.getTransactionId(), loanTransactionDTO.getTransactionDate(), creditEntry.getValue(), glAccount);
+            }
+        }
+        // create debit entries
+        for (Map.Entry<Long, BigDecimal> debitEntry : glAccountBalanceHolder.getDebitBalances().entrySet()) {
+            if (MathUtil.isGreaterThanZero(debitEntry.getValue())) {
+                GLAccount glAccount = glAccountBalanceHolder.getGlAccountMap().get(debitEntry.getKey());
+                this.helper.createDebitJournalEntryForLoan(office, loanDTO.getCurrencyCode(), loanDTO.getLoanId(),
+                        loanTransactionDTO.getTransactionId(), loanTransactionDTO.getTransactionDate(), debitEntry.getValue(), glAccount);
+            }
+        }
+    }
+
+    private void createJournalEntriesForBuyDownFee(final LoanDTO loanDTO, final LoanTransactionDTO loanTransactionDTO,
+            final Office office) {
+        // loan properties
+        final Long loanProductId = loanDTO.getLoanProductId();
+        final Long loanId = loanDTO.getLoanId();
+        final String currencyCode = loanDTO.getCurrencyCode();
+
+        // transaction properties
+        final String transactionId = loanTransactionDTO.getTransactionId();
+        final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
+        final BigDecimal amount = loanTransactionDTO.getAmount();
+        final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+
+        if (MathUtil.isGreaterThanZero(amount)) {
+            this.helper.createJournalEntriesForLoan(office, currencyCode, AccrualAccountsForLoan.BUY_DOWN_EXPENSE.getValue(),
+                    AccrualAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
+                    transactionDate, amount);
+        }
+    }
+
+    private void createJournalEntriesForBuyDownFeeAdjustment(final LoanDTO loanDTO, final LoanTransactionDTO loanTransactionDTO,
+            final Office office) {
+        // loan properties
+        final Long loanProductId = loanDTO.getLoanProductId();
+        final Long loanId = loanDTO.getLoanId();
+        final String currencyCode = loanDTO.getCurrencyCode();
+
+        // transaction properties
+        final String transactionId = loanTransactionDTO.getTransactionId();
+        final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
+        final BigDecimal amount = loanTransactionDTO.getAmount();
+        final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+
+        if (MathUtil.isGreaterThanZero(amount)) {
+            // Mirror of Buy Down Fee entries (as per PS-2574 requirements)
+            // Debit: Deferred Income Liability, Credit: Buy Down Expense
+            this.helper.createJournalEntriesForLoan(office, currencyCode, AccrualAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(),
+                    AccrualAccountsForLoan.BUY_DOWN_EXPENSE.getValue(), loanProductId, paymentTypeId, loanId, transactionId,
+                    transactionDate, amount);
+        }
+    }
+
+    private void createJournalEntriesForBuyDownFeeAmortization(final LoanDTO loanDTO, final LoanTransactionDTO loanTransactionDTO,
+            final Office office) {
+        final boolean isMarkedAsChargeOff = loanDTO.isMarkedAsChargeOff();
+        if (isMarkedAsChargeOff) {
+            createJournalEntriesForChargeOffLoanBuyDownFeeAmortization(loanDTO, loanTransactionDTO, office);
+        } else {
+            createJournalEntriesForLoanBuyDownFeeAmortization(loanDTO, loanTransactionDTO, office);
+        }
+    }
+
+    private void createJournalEntriesForLoanBuyDownFeeAmortization(final LoanDTO loanDTO, final LoanTransactionDTO loanTransactionDTO,
+            final Office office) {
+        // loan properties
+        final Long loanProductId = loanDTO.getLoanProductId();
+        final Long loanId = loanDTO.getLoanId();
+        final String currencyCode = loanDTO.getCurrencyCode();
+        final boolean isLoanWrittenOff = loanDTO.isMarkedAsWrittenOff();
+
+        // transaction properties
+        final String transactionId = loanTransactionDTO.getTransactionId();
+        final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
+        final BigDecimal interestAmount = loanTransactionDTO.getInterest();
+        final BigDecimal feesAmount = loanTransactionDTO.getFees();
+        final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+        final GLAccountBalanceHolder glAccountBalanceHolder = new GLAccountBalanceHolder();
+
+        // interest payment
+        final AccrualAccountsForLoan creditAccountType = isLoanWrittenOff ? AccrualAccountsForLoan.LOSSES_WRITTEN_OFF
+                : AccrualAccountsForLoan.INCOME_FROM_BUY_DOWN;
+        if (MathUtil.isGreaterThanZero(interestAmount)) {
+            populateCreditDebitMaps(loanProductId, interestAmount, paymentTypeId, creditAccountType.getValue(),
+                    AccrualAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(), glAccountBalanceHolder);
+        }
+        // handle fees payment
+        if (MathUtil.isGreaterThanZero(feesAmount)) {
+            populateCreditDebitMaps(loanProductId, feesAmount, paymentTypeId, creditAccountType.getValue(),
+                    AccrualAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(), glAccountBalanceHolder);
+        }
+
+        // create credit entries
+        for (Map.Entry<Long, BigDecimal> creditEntry : glAccountBalanceHolder.getCreditBalances().entrySet()) {
+            if (MathUtil.isGreaterThanZero(creditEntry.getValue())) {
+                GLAccount glAccount = glAccountBalanceHolder.getGlAccountMap().get(creditEntry.getKey());
+                this.helper.createCreditJournalEntryForLoan(office, currencyCode, loanId, transactionId, transactionDate,
+                        creditEntry.getValue(), glAccount);
+            }
+        }
+        // create debit entries
+        for (Map.Entry<Long, BigDecimal> debitEntry : glAccountBalanceHolder.getDebitBalances().entrySet()) {
+            if (MathUtil.isGreaterThanZero(debitEntry.getValue())) {
+                GLAccount glAccount = glAccountBalanceHolder.getGlAccountMap().get(debitEntry.getKey());
+                this.helper.createDebitJournalEntryForLoan(office, currencyCode, loanId, transactionId, transactionDate,
+                        debitEntry.getValue(), glAccount);
+            }
+        }
+    }
+
+    private void createJournalEntriesForChargeOffLoanBuyDownFeeAmortization(final LoanDTO loanDTO,
+            final LoanTransactionDTO loanTransactionDTO, final Office office) {
+        // loan properties
+        final Long loanProductId = loanDTO.getLoanProductId();
+        final boolean isMarkedFraud = loanDTO.isMarkedAsFraud();
+        final Long loanId = loanDTO.getLoanId();
+        final String currencyCode = loanDTO.getCurrencyCode();
+
+        // transaction properties
+        final String transactionId = loanTransactionDTO.getTransactionId();
+        final LocalDate transactionDate = loanTransactionDTO.getTransactionDate();
+        final BigDecimal interestAmount = loanTransactionDTO.getInterest();
+        final BigDecimal feesAmount = loanTransactionDTO.getFees();
+        final Long paymentTypeId = loanTransactionDTO.getPaymentTypeId();
+        final GLAccountBalanceHolder glAccountBalanceHolder = new GLAccountBalanceHolder();
+        final Long chargeOffReasonCodeValue = loanDTO.getChargeOffReasonCodeValue();
+
+        final ProductToGLAccountMapping mapping = chargeOffReasonCodeValue != null
+                ? helper.getChargeOffMappingByCodeValue(loanProductId, PortfolioProductType.LOAN, chargeOffReasonCodeValue)
+                : null;
+
+        if (mapping != null) {
+            final GLAccount accountDebit = this.helper.getLinkedGLAccountForLoanProduct(loanProductId,
+                    AccrualAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(), paymentTypeId);
+            // handle interest payment
+            if (MathUtil.isGreaterThanZero(interestAmount)) {
+                glAccountBalanceHolder.addToCredit(mapping.getGlAccount(), interestAmount);
+                glAccountBalanceHolder.addToDebit(accountDebit, interestAmount);
+            }
+            // handle fees payment
+            if (MathUtil.isGreaterThanZero(feesAmount)) {
+                glAccountBalanceHolder.addToCredit(mapping.getGlAccount(), feesAmount);
+                glAccountBalanceHolder.addToDebit(accountDebit, feesAmount);
+            }
+        } else {
+            final AccrualAccountsForLoan creditAccountType = isMarkedFraud ? AccrualAccountsForLoan.CHARGE_OFF_FRAUD_EXPENSE
+                    : AccrualAccountsForLoan.CHARGE_OFF_EXPENSE;
+            // handle interest payment
+            if (MathUtil.isGreaterThanZero(interestAmount)) {
+                populateCreditDebitMaps(loanProductId, interestAmount, paymentTypeId, creditAccountType.getValue(),
+                        AccrualAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(), glAccountBalanceHolder);
+            }
+            // handle fees payment
+            if (MathUtil.isGreaterThanZero(feesAmount)) {
+                populateCreditDebitMaps(loanProductId, feesAmount, paymentTypeId, creditAccountType.getValue(),
+                        AccrualAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(), glAccountBalanceHolder);
+            }
+        }
+
+        // create credit entries
+        for (Map.Entry<Long, BigDecimal> creditEntry : glAccountBalanceHolder.getCreditBalances().entrySet()) {
+            if (MathUtil.isGreaterThanZero(creditEntry.getValue())) {
+                GLAccount glAccount = glAccountBalanceHolder.getGlAccountMap().get(creditEntry.getKey());
+                this.helper.createCreditJournalEntryForLoan(office, currencyCode, loanId, transactionId, transactionDate,
+                        creditEntry.getValue(), glAccount);
+            }
+        }
+        // create debit entries
+        for (Map.Entry<Long, BigDecimal> debitEntry : glAccountBalanceHolder.getDebitBalances().entrySet()) {
+            if (MathUtil.isGreaterThanZero(debitEntry.getValue())) {
+                GLAccount glAccount = glAccountBalanceHolder.getGlAccountMap().get(debitEntry.getKey());
+                this.helper.createDebitJournalEntryForLoan(office, currencyCode, loanId, transactionId, transactionDate,
+                        debitEntry.getValue(), glAccount);
+            }
+        }
+    }
+
+    private void createJournalEntriesForBuyDownFeeAmortizationAdjustment(final LoanDTO loanDTO, final LoanTransactionDTO loanTransactionDTO,
+            final Office office) {
+        GLAccountBalanceHolder glAccountBalanceHolder = new GLAccountBalanceHolder();
+        if (MathUtil.isGreaterThanZero(loanTransactionDTO.getAmount())) {
+            populateCreditDebitMaps(loanDTO.getLoanProductId(), loanTransactionDTO.getAmount(), loanTransactionDTO.getPaymentTypeId(),
+                    AccrualAccountsForLoan.DEFERRED_INCOME_LIABILITY.getValue(), AccrualAccountsForLoan.INCOME_FROM_BUY_DOWN.getValue(),
+                    glAccountBalanceHolder);
         }
 
         // create credit entries

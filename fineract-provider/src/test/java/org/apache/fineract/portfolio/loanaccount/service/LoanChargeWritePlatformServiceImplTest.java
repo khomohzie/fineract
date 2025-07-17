@@ -177,7 +177,7 @@ class LoanChargeWritePlatformServiceImplTest {
         when(chargeDefinition.getChargeTimeType()).thenReturn(SPECIFIED_DUE_DATE);
         when(chargeDefinition.getCurrencyCode()).thenReturn(CURRENCY_CODE);
         when(loanChargeAssembler.createNewFromJson(loan, chargeDefinition, jsonCommand)).thenReturn(loanCharge);
-        when(loan.repaymentScheduleDetail()).thenReturn(loanRepaymentScheduleDetail);
+        when(loan.getLoanProductRelatedDetail()).thenReturn(loanRepaymentScheduleDetail);
         when(loanRepaymentScheduleDetail.getLoanScheduleType()).thenReturn(LoanScheduleType.CUMULATIVE);
         when(loan.getLoanRepaymentScheduleDetail()).thenReturn(loanRepaymentScheduleDetail);
         when(loan.hasCurrencyCodeOf(CURRENCY_CODE)).thenReturn(true);
@@ -199,7 +199,7 @@ class LoanChargeWritePlatformServiceImplTest {
         when(loan.getDisbursementDate()).thenReturn(LocalDate.now(ZoneId.systemDefault()));
         when(loan.getRepaymentScheduleInstallments()).thenReturn(new ArrayList<>());
         when(loanChargeService.calculateAmountPercentageAppliedTo(any(Loan.class), any(LoanCharge.class))).thenReturn(BigDecimal.TEN);
-        when(loan.fetchNumberOfInstallmensAfterExceptions()).thenReturn(5);
+        when(loan.fetchNumberOfInstallmentsAfterExceptions()).thenReturn(5);
         when(loan.updateSummaryWithTotalFeeChargesDueAtDisbursement(any(BigDecimal.class))).thenReturn(null);
         when(loan.deriveSumTotalOfChargesDueAtDisbursement()).thenReturn(BigDecimal.ZERO);
         when(loanCharge.getDueLocalDate()).thenReturn(LocalDate.now(ZoneId.systemDefault()));

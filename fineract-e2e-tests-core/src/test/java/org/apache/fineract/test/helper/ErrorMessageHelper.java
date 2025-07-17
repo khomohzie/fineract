@@ -68,6 +68,11 @@ public final class ErrorMessageHelper {
         return "Loan can't be disbursed,disburse amount is exceeding approved principal ";
     }
 
+    public static String addDisbursementExceedMaxAppliedAmountFailure(String totalDisbAmount, String maxDisbursalAmount) {
+        return String.format("Loan disbursal amount can't be greater than maximum applied loan amount calculation. "
+                + "Total disbursed amount: %s  Maximum disbursal amount: %s", totalDisbAmount, maxDisbursalAmount);
+    }
+
     public static String disbursePastDateFailure(Integer loanId, String actualDisbursementDate) {
         return String.format("The date on which a loan is disbursed cannot be before its approval date: %s", actualDisbursementDate);
     }
@@ -357,6 +362,13 @@ public final class ErrorMessageHelper {
         String expectedToStr = expected.toString();
         return String.format("Wrong amount in Loan total outstanding. Actual amount is: %s - But expected amount is: %s", actualToStr,
                 expectedToStr);
+    }
+
+    public static String wrongAmountInTotalUnpaidPayableDueInterest(Double actual, Double expected) {
+        String actualToStr = actual.toString();
+        String expectedToStr = expected.toString();
+        return String.format("Wrong amount in Loan total unpaid payable due interest. Actual amount is: %s - But expected amount is: %s",
+                actualToStr, expectedToStr);
     }
 
     public static String wrongAmountInTotalOverdue(Double actual, Double expected) {
@@ -959,5 +971,13 @@ public final class ErrorMessageHelper {
 
     public static String addInterestPauseForNotInactiveLoanFailure() {
         return "Operations on interest pauses are restricted to active loans.";
+    }
+
+    public static String addInstallmentFeeInterestPercentageChargeFailure() {
+        return "Failed data validation due to: installment.loancharge.with.calculation.type.interest.not.allowed.";
+    }
+
+    public static String addInstallmentFeePrincipalPercentageChargeFailure() {
+        return "Failed data validation due to: installment.loancharge.with.calculation.type.principal.not.allowed.";
     }
 }

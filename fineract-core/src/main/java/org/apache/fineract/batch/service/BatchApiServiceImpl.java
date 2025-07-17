@@ -25,6 +25,7 @@ import com.google.gson.Gson;
 import com.jayway.jsonpath.JsonPathException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.resilience4j.core.functions.Either;
+import io.github.resilience4j.retry.Retry;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.ws.rs.core.UriInfo;
@@ -51,17 +52,20 @@ import org.apache.fineract.batch.domain.Header;
 import org.apache.fineract.batch.exception.BatchReferenceInvalidException;
 import org.apache.fineract.batch.exception.ErrorInfo;
 import org.apache.fineract.batch.service.ResolutionHelper.BatchRequestNode;
+import org.apache.fineract.commands.configuration.RetryConfigurationAssembler;
 import org.apache.fineract.infrastructure.core.domain.BatchRequestContextHolder;
 import org.apache.fineract.infrastructure.core.exception.ErrorHandler;
 import org.apache.fineract.infrastructure.core.filters.BatchCallHandler;
 import org.apache.fineract.infrastructure.core.filters.BatchFilter;
 import org.apache.fineract.infrastructure.core.filters.BatchRequestPreprocessor;
 import org.apache.fineract.infrastructure.core.persistence.ExtendedJpaTransactionManager;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.NonTransientDataAccessException;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionExecution;
 import org.springframework.transaction.TransactionSystemException;
@@ -72,9 +76,9 @@ import org.springframework.transaction.support.TransactionTemplate;
  * CommandStrategy from CommandStrategyProvider.
  *
  * @author Rishabh Shukla
- * @see org.apache.fineract.batch.domain.BatchRequest
- * @see org.apache.fineract.batch.domain.BatchResponse
- * @see org.apache.fineract.batch.command.CommandStrategyProvider
+ * @see BatchRequest
+ * @see BatchResponse
+ * @see CommandStrategyProvider
  */
 @Service
 @RequiredArgsConstructor
@@ -83,13 +87,15 @@ public class BatchApiServiceImpl implements BatchApiService {
 
     private final CommandStrategyProvider strategyProvider;
     private final ResolutionHelper resolutionHelper;
-    private final PlatformTransactionManager transactionManager;
     private final ErrorHandler errorHandler;
 
     private final List<BatchFilter> batchFilters;
 
     private final List<BatchRequestPreprocessor> batchPreprocessors;
 
+    private final RetryConfigurationAssembler retryConfigurationAssembler;
+
+    private PlatformTransactionManager transactionManager;
     private EntityManager entityManager;
 
     /**
@@ -138,34 +144,44 @@ public class BatchApiServiceImpl implements BatchApiService {
      */
     private List<BatchResponse> callInTransaction(Consumer<TransactionTemplate> transactionConfigurator,
             Supplier<List<BatchResponse>> request) {
+        // Retry logic for enclosingTransaction=true and when the isolation level is REPEATABLE_READ or stricter we need
+        // to restart the transaction as well!
+
+        Retry retry = retryConfigurationAssembler.getRetryConfigurationForBatchApiWithEnclosingTransaction();
         List<BatchResponse> responseList = new ArrayList<>();
-        try {
-            TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
-            if (transactionManager instanceof ExtendedJpaTransactionManager extendedJpaTransactionManager) {
-                transactionTemplate.setReadOnly(extendedJpaTransactionManager.isReadOnlyConnection());
-            }
-            transactionConfigurator.accept(transactionTemplate);
-            return transactionTemplate.execute(status -> {
-                BatchRequestContextHolder.setEnclosingTransaction(status);
-                try {
+        Supplier<List<BatchResponse>> batchSupplier = () -> {
+            responseList.clear();
+            try {
+                TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+                transactionTemplate.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ);
+                if (transactionManager instanceof ExtendedJpaTransactionManager extendedJpaTransactionManager) {
+                    transactionTemplate.setReadOnly(extendedJpaTransactionManager.isReadOnlyConnection());
+                }
+                transactionConfigurator.accept(transactionTemplate);
+                return transactionTemplate.execute(status -> {
+                    BatchRequestContextHolder.setEnclosingTransaction(status);
                     responseList.addAll(request.get());
                     return responseList;
-                } catch (BatchExecutionException ex) {
-                    log.error("Exception during the batch request processing", ex);
-                    responseList.add(buildErrorResponse(ex.getCause(), ex.getRequest()));
-                    return responseList;
-                } finally {
-                    BatchRequestContextHolder.resetTransaction();
-                }
-            });
+                });
+            } finally {
+                BatchRequestContextHolder.resetTransaction();
+            }
+        };
+        Supplier<List<BatchResponse>> retryingBatch = Retry.decorateSupplier(retry, batchSupplier);
+        try {
+            return retryingBatch.get();
         } catch (TransactionException | NonTransientDataAccessException ex) {
             return buildErrorResponses(ex, responseList);
+        } catch (BatchExecutionException ex) {
+            log.error("Exception during the batch request processing", ex);
+            responseList.add(buildErrorResponse(ex.getCause(), ex.getRequest()));
+            return responseList;
         }
     }
 
     /**
-     * Returns the response list by getting a proper {@link org.apache.fineract.batch.command.CommandStrategy}.
-     * execute() method of acquired commandStrategy is then provided with the separate Request.
+     * Returns the response list by getting a proper {@link CommandStrategy}. execute() method of acquired
+     * commandStrategy is then provided with the separate Request.
      *
      * @param requestList
      * @param uriInfo
@@ -383,5 +399,10 @@ public class BatchApiServiceImpl implements BatchApiService {
     @PersistenceContext
     public void setEntityManager(EntityManager entityManager) {
         this.entityManager = entityManager;
+    }
+
+    @Autowired
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
     }
 }
