@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,13 +18,7 @@
  */
 package org.apache.fineract.commands.service;
 
-import static org.apache.fineract.useradministration.service.AppUserConstants.PASSWORD;
-import static org.apache.fineract.useradministration.service.AppUserConstants.REPEAT_PASSWORD;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 import org.apache.fineract.commands.domain.CommandWrapper;
 import org.apache.fineract.infrastructure.accountnumberformat.service.AccountNumberFormatConstants;
 import org.apache.fineract.infrastructure.core.domain.ExternalId;
@@ -33,6 +27,13 @@ import org.apache.fineract.portfolio.paymenttype.api.PaymentTypeApiResourceConst
 import org.apache.fineract.portfolio.savings.DepositsApiConstants;
 import org.apache.fineract.portfolio.self.pockets.api.PocketApiConstants;
 import org.apache.fineract.useradministration.api.PasswordPreferencesApiConstants;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.apache.fineract.useradministration.service.AppUserConstants.PASSWORD;
+import static org.apache.fineract.useradministration.service.AppUserConstants.REPEAT_PASSWORD;
 
 public class CommandWrapperBuilder {
 
@@ -1810,7 +1811,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder createCalendar(final CommandWrapper resourceDetails, final String supportedEntityType,
-            final Long supportedEntityId) {
+                                                final Long supportedEntityId) {
         this.actionName = "CREATE";
         this.entityName = "CALENDAR";
         this.clientId = resourceDetails.getClientId();
@@ -1840,9 +1841,9 @@ public class CommandWrapperBuilder {
     public CommandWrapperBuilder createNote(final CommandWrapper resourceDetails, final String resourceType, final Long resourceId) {
         this.actionName = "CREATE";
         this.entityName = resourceDetails.entityName();// Note supports multiple
-                                                       // resources. Note
-                                                       // Permissions are set
-                                                       // for each resource.
+        // resources. Note
+        // Permissions are set
+        // for each resource.
         this.clientId = resourceDetails.getClientId();
         this.loanId = resourceDetails.getLoanId();
         this.savingsId = resourceDetails.getSavingsId();
@@ -1853,12 +1854,12 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder updateNote(final CommandWrapper resourceDetails, final String resourceType, final Long resourceId,
-            final Long noteId) {
+                                            final Long noteId) {
         this.actionName = "UPDATE";
         this.entityName = resourceDetails.entityName();// Note supports multiple
-                                                       // resources. Note
-                                                       // Permissions are set
-                                                       // for each resource.
+        // resources. Note
+        // Permissions are set
+        // for each resource.
         this.entityId = noteId;
         this.clientId = resourceDetails.getClientId();
         this.loanId = resourceDetails.getLoanId();
@@ -1870,12 +1871,12 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder deleteNote(final CommandWrapper resourceDetails, final String resourceType, final Long resourceId,
-            final Long noteId) {
+                                            final Long noteId) {
         this.actionName = "DELETE";
         this.entityName = resourceDetails.entityName();// Note supports multiple
-                                                       // resources. Note
-                                                       // Permissions are set
-                                                       // for each resource.
+        // resources. Note
+        // Permissions are set
+        // for each resource.
         this.entityId = noteId;
         this.clientId = resourceDetails.getClientId();
         this.loanId = resourceDetails.getLoanId();
@@ -2327,7 +2328,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder createMeeting(final CommandWrapper resourceDetails, final String supportedEntityType,
-            final Long supportedEntityId) {
+                                               final Long supportedEntityId) {
         this.actionName = "CREATE";
         this.entityName = "MEETING";
         this.clientId = resourceDetails.getClientId();
@@ -2354,7 +2355,7 @@ public class CommandWrapperBuilder {
     }
 
     public CommandWrapperBuilder saveOrUpdateAttendance(final Long entityId, final String supportedEntityType,
-            final Long supportedEntityId) {
+                                                        final Long supportedEntityId) {
         this.actionName = "SAVEORUPDATEATTENDANCE";
         this.entityName = "MEETING";
         this.entityId = entityId;
@@ -3113,9 +3114,9 @@ public class CommandWrapperBuilder {
 
     public CommandWrapperBuilder createProduct(String productType) {
         this.entityName = productType.toUpperCase() + "PRODUCT"; // To Support
-                                                                 // different
-                                                                 // type of
-                                                                 // products
+        // different
+        // type of
+        // products
         this.actionName = "CREATE";
         this.entityId = null;
         this.href = "/products/" + productType;
@@ -3132,9 +3133,9 @@ public class CommandWrapperBuilder {
 
     public CommandWrapperBuilder createAccount(String accountType) {
         this.entityName = accountType.toUpperCase() + "ACCOUNT"; // To Support
-                                                                 // different
-                                                                 // type of
-                                                                 // Accounts
+        // different
+        // type of
+        // Accounts
         this.actionName = "CREATE";
         this.entityId = null;
         this.href = "/accounts/" + accountType;
@@ -3874,6 +3875,253 @@ public class CommandWrapperBuilder {
         this.entityId = null;
         this.loanId = loanId;
         this.href = "/loans/" + loanId + "/transactions/template?command=buyDownFee";
+        return this;
+    }
+
+    public CommandWrapperBuilder createCurrentAccount() {
+        this.actionName = "CREATE";
+        this.entityName = "CURRENTACCOUNT";
+        this.entityId = null;
+        this.href = "/currentaccounts/template";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCurrentAccount(final Long accountId) {
+        this.actionName = "UPDATE";
+        this.entityName = "CURRENTACCOUNT";
+        this.entityId = accountId;
+        this.href = "/currentaccounts/" + accountId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCurrentAccount(final Long accountId) {
+        this.actionName = "DELETE";
+        this.entityName = "CURRENTACCOUNT";
+        this.entityId = accountId;
+        this.href = "/currentaccounts/" + accountId;
+        return this;
+    }
+
+    // Current Account Application Lifecycle
+    public CommandWrapperBuilder rejectCurrentAccountApplication(final Long accountId) {
+        this.actionName = "REJECT";
+        this.entityName = "CURRENTACCOUNT";
+        this.entityId = accountId;
+        this.savingsId = accountId; // Using savingsId field for account reference
+        this.href = "/currentaccounts/" + accountId + "?command=reject";
+        return this;
+    }
+
+    public CommandWrapperBuilder withdrawCurrentAccountApplication(final Long accountId) {
+        this.actionName = "WITHDRAW";
+        this.entityName = "CURRENTACCOUNT";
+        this.entityId = accountId;
+        this.savingsId = accountId;
+        this.href = "/currentaccounts/" + accountId + "?command=withdrawnByApplicant";
+        return this;
+    }
+
+    public CommandWrapperBuilder approveCurrentAccountApplication(final Long accountId) {
+        this.actionName = "APPROVE";
+        this.entityName = "CURRENTACCOUNT";
+        this.entityId = accountId;
+        this.savingsId = accountId;
+        this.href = "/currentaccounts/" + accountId + "?command=approve";
+        return this;
+    }
+
+    public CommandWrapperBuilder undoCurrentAccountApplication(final Long accountId) {
+        this.actionName = "APPROVALUNDO";
+        this.entityName = "CURRENTACCOUNT";
+        this.entityId = accountId;
+        this.savingsId = accountId;
+        this.href = "/currentaccounts/" + accountId + "?command=undoapproval";
+        return this;
+    }
+
+    public CommandWrapperBuilder currentAccountActivation(final Long accountId) {
+        this.actionName = "ACTIVATE";
+        this.entityName = "CURRENTACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = accountId;
+        this.href = "/currentaccounts/" + accountId + "?command=activate";
+        return this;
+    }
+
+    public CommandWrapperBuilder closeCurrentAccount(final Long accountId) {
+        this.actionName = "CLOSE";
+        this.entityName = "CURRENTACCOUNT";
+        this.entityId = accountId;
+        this.savingsId = accountId;
+        this.href = "/currentaccounts/" + accountId + "?command=close";
+        return this;
+    }
+
+    // Current Account Transactions
+    public CommandWrapperBuilder currentAccountDeposit(final Long accountId) {
+        this.actionName = "DEPOSIT";
+        this.entityName = "CURRENTACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = null;
+        this.href = "/currentaccounts/" + accountId + "/transactions";
+        return this;
+    }
+
+    public CommandWrapperBuilder currentAccountWithdrawal(final Long accountId) {
+        this.actionName = "WITHDRAWAL";
+        this.entityName = "CURRENTACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = null;
+        this.href = "/currentaccounts/" + accountId + "/transactions";
+        return this;
+    }
+
+    public CommandWrapperBuilder undoCurrentAccountTransaction(final Long accountId, final Long transactionId) {
+        this.actionName = "UNDOTRANSACTION";
+        this.entityName = "CURRENTACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = accountId;
+        this.subentityId = transactionId;
+        this.transactionId = transactionId.toString();
+        this.href = "/currentaccounts/" + accountId + "/transactions/" + transactionId + "?command=undo";
+        return this;
+    }
+
+    public CommandWrapperBuilder reverseCurrentAccountTransaction(final Long accountId, final Long transactionId) {
+        this.actionName = "REVERSETRANSACTION";
+        this.entityName = "CURRENTACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = accountId;
+        this.subentityId = transactionId;
+        this.transactionId = transactionId.toString();
+        this.href = "/currentaccounts/" + accountId + "/transactions/" + transactionId + "?command=reverse";
+        return this;
+    }
+
+    public CommandWrapperBuilder adjustCurrentAccountTransaction(final Long accountId, final Long transactionId) {
+        this.actionName = "ADJUSTTRANSACTION";
+        this.entityName = "CURRENTACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = accountId;
+        this.subentityId = transactionId;
+        this.transactionId = transactionId.toString();
+        this.href = "/currentaccounts/" + accountId + "/transactions/" + transactionId + "?command=modify";
+        return this;
+    }
+
+    // Current Account Interest Operations
+    public CommandWrapperBuilder currentAccountInterestCalculation(final Long accountId) {
+        this.actionName = "CALCULATEINTEREST";
+        this.entityName = "CURRENTACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = accountId;
+        this.href = "/currentaccounts/" + accountId + "?command=calculateInterest";
+        return this;
+    }
+
+    public CommandWrapperBuilder currentAccountInterestPosting(final Long accountId) {
+        this.actionName = "POSTINTEREST";
+        this.entityName = "CURRENTACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = accountId;
+        this.href = "/currentaccounts/" + accountId + "?command=postInterest";
+        return this;
+    }
+
+    // Current Account Charges
+    public CommandWrapperBuilder createCurrentAccountCharge(final Long currentAccountId) {
+        this.actionName = "CREATE";
+        this.entityName = "CURRENTACCOUNTCHARGE";
+        this.savingsId = currentAccountId;
+        this.href = "/currentaccounts/" + currentAccountId + "/charges";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCurrentAccountCharge(final Long currentAccountId, final Long currentAccountChargeId) {
+        this.actionName = "UPDATE";
+        this.entityName = "CURRENTACCOUNTCHARGE";
+        this.entityId = currentAccountChargeId;
+        this.savingsId = currentAccountId;
+        this.href = "/currentaccounts/" + currentAccountId + "/charges/" + currentAccountChargeId;
+        return this;
+    }
+
+    public CommandWrapperBuilder waiveCurrentAccountCharge(final Long currentAccountId, final Long currentAccountChargeId) {
+        this.actionName = "WAIVE";
+        this.entityName = "CURRENTACCOUNTCHARGE";
+        this.entityId = currentAccountChargeId;
+        this.savingsId = currentAccountId;
+        this.href = "/currentaccounts/" + currentAccountId + "/charges/" + currentAccountChargeId;
+        return this;
+    }
+
+    public CommandWrapperBuilder payCurrentAccountCharge(final Long currentAccountId, final Long currentAccountChargeId) {
+        this.actionName = "PAY";
+        this.entityName = "CURRENTACCOUNTCHARGE";
+        this.entityId = currentAccountChargeId;
+        this.savingsId = currentAccountId;
+        this.href = "/currentaccounts/" + currentAccountId + "/charges/" + currentAccountChargeId;
+        return this;
+    }
+
+    public CommandWrapperBuilder inactivateCurrentAccountCharge(final Long currentAccountId, final Long currentAccountChargeId) {
+        this.actionName = "INACTIVATE";
+        this.entityName = "CURRENTACCOUNTCHARGE";
+        this.entityId = currentAccountChargeId;
+        this.savingsId = currentAccountId;
+        this.href = "/currentaccounts/" + currentAccountId + "/charges/" + currentAccountChargeId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCurrentAccountCharge(final Long currentAccountId, final Long currentAccountChargeId) {
+        this.actionName = "DELETE";
+        this.entityName = "CURRENTACCOUNTCHARGE";
+        this.entityId = currentAccountChargeId;
+        this.savingsId = currentAccountId;
+        this.href = "/currentaccounts/" + currentAccountId + "/charges/" + currentAccountChargeId;
+        return this;
+    }
+
+    // Current Account Product Operations
+    public CommandWrapperBuilder createCurrentAccountProduct() {
+        this.actionName = "CREATE";
+        this.entityName = "CURRENTACCOUNTPRODUCT";
+        this.entityId = null;
+        this.href = "/currentaccountproducts/template";
+        return this;
+    }
+
+    public CommandWrapperBuilder updateCurrentAccountProduct(final Long productId) {
+        this.actionName = "UPDATE";
+        this.entityName = "CURRENTACCOUNTPRODUCT";
+        this.entityId = productId;
+        this.href = "/currentaccountproducts/" + productId;
+        return this;
+    }
+
+    public CommandWrapperBuilder deleteCurrentAccountProduct(final Long productId) {
+        this.actionName = "DELETE";
+        this.entityName = "CURRENTACCOUNTPRODUCT";
+        this.entityId = productId;
+        this.href = "/currentaccountproducts/" + productId;
+        return this;
+    }
+
+    public CommandWrapperBuilder approveCurrentAccount(final Long accountId) {
+        this.actionName = "APPROVE";
+        this.entityName = "CURRENTACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = accountId;
+        this.href = "/currentaccounts/" + accountId + "?command=approve";
+        return this;
+    }
+
+    public CommandWrapperBuilder activateCurrentAccount(final Long accountId) {
+        this.actionName = "ACTIVATE";
+        this.entityName = "CURRENTACCOUNT";
+        this.savingsId = accountId;
+        this.entityId = accountId;
+        this.href = "/currentaccounts/" + accountId + "?command=activate";
         return this;
     }
 }
