@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,7 +24,8 @@ public enum PortfolioProductType {
     SAVING(2, "productType.saving"), //
     CLIENT(5, "productType.client"), //
     PROVISIONING(3, "productType.provisioning"), //
-    SHARES(4, "productType.shares"); //
+    SHARES(4, "productType.shares"), //
+    CURRENT_ACCOUNT(6, "productType.currentAccount"); // NEW: Our addition - ID 6, code for Current Account (hardcodes it like the others)
 
     private final Integer value;
     private final String code;
@@ -63,6 +64,8 @@ public enum PortfolioProductType {
                 return PROVISIONING;
             case 5:
                 return SHARES;
+            case 6:
+                return CURRENT_ACCOUNT;
             default:
                 return null;
         }
@@ -84,4 +87,7 @@ public enum PortfolioProductType {
         return this.equals(SHARES);
     }
 
+    public boolean isCurrentAccountProduct() {
+        return this.equals(CURRENT_ACCOUNT);
+    }
 }

@@ -19,84 +19,272 @@
     under the License.
 
 -->
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.1.xsd">
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
 
-    <!-- Unique ID for this changeset (use a date or unique string) -->
-    <changeSet id="1" author="Daniel Komolafe">
-
-        <!-- Create table for Current Account Products (templates) -->
+    <!-- Current Account Product Configuration Table -->
+    <changeSet id="999-1" author="custom">
         <createTable tableName="m_current_account_product">
-            <column name="id" type="bigint" autoIncrement="true">
+            <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="name" type="varchar(100)">
-                <constraints nullable="false" unique="true"/>
-            </column>
-            <column name="short_name" type="varchar(4)">
-                <constraints nullable="false" unique="true"/>
-            </column>
-            <column name="description" type="varchar(500)"/>
-            <column name="currency_code" type="varchar(3)" defaultValue="USD">
+            <column name="name" type="VARCHAR(100)">
                 <constraints nullable="false"/>
             </column>
-            <column name="currency_digits" type="int" defaultValue="2">
+            <column name="short_name" type="VARCHAR(4)">
                 <constraints nullable="false"/>
             </column>
-            <column name="min_balance" type="decimal(19,6)"/>
-            <column name="overdraft_limit" type="decimal(19,6)"/>
-            <column name="product_type_id" type="int" defaultValue="6">
-                <constraints nullable="false"/> <!-- Links to ProductType enum ID 6 -->
+            <column name="description" type="TEXT"/>
+            <column name="currency_code" type="VARCHAR(3)">
+                <constraints nullable="false"/>
             </column>
-            <!-- Auditing fields (common in Fineract tables) -->
-            <column name="createdby_id" type="bigint"/>
-            <column name="created_date" type="datetime"/>
-            <column name="lastmodifiedby_id" type="bigint"/>
-            <column name="lastmodified_date" type="datetime"/>
+            <column name="currency_digits" type="SMALLINT" defaultValueNumeric="2">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency_multiplesof" type="SMALLINT"/>
+            <column name="minimum_opening_balance" type="DECIMAL(19,6)"/>
+            <column name="maintenance_fee_amount" type="DECIMAL(19,6)"/>
+            <column name="maintenance_fee_frequency" type="SMALLINT"
+                    defaultValueNumeric="1"/> <!-- 1=Monthly, 2=Quarterly, 3=Annually -->
+            <column name="overdraft_limit" type="DECIMAL(19,6)" defaultValueNumeric="0.00"/>
+            <column name="transaction_limit_per_day" type="DECIMAL(19,6)"/>
+            <column name="minimum_balance_for_interest_calculation" type="DECIMAL(19,6)"/>
+            <column name="interest_rate" type="DECIMAL(19,6)" defaultValueNumeric="0.00"/>
+            <column name="interest_calculation_type" type="SMALLINT"
+                    defaultValueNumeric="1"/> <!-- 1=Daily Balance, 2=Average Daily Balance -->
+            <column name="interest_posting_period_type" type="SMALLINT" defaultValueNumeric="4"/> <!-- 4=Monthly -->
+            <column name="is_active" type="TINYINT" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="DATE"/>
+            <column name="created_by" type="BIGINT"/>
+            <column name="lastmodified_date" type="DATE"/>
+            <column name="lastmodified_by" type="BIGINT"/>
         </createTable>
+        <addUniqueConstraint tableName="m_current_account_product" columnNames="name"
+                             constraintName="current_account_product_name_UNIQUE"/>
+        <addUniqueConstraint tableName="m_current_account_product" columnNames="short_name"
+                             constraintName="current_account_product_short_name_UNIQUE"/>
+    </changeSet>
 
-        <!-- Add indexes for faster queries (optional but good practice) -->
-        <createIndex indexName="name_current_account_product" tableName="m_current_account_product" unique="true">
-            <column name="name"/>
-        </createIndex>
-
-        <!-- Create table for individual Current Accounts -->
+    <!-- Current Account Instances Table -->
+    <changeSet id="999-2" author="custom">
         <createTable tableName="m_current_account">
-            <column name="id" type="bigint" autoIncrement="true">
+            <column name="id" type="BIGINT" autoIncrement="true">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="client_id" type="bigint">
+            <column name="account_no" type="VARCHAR(20)">
                 <constraints nullable="false"/>
             </column>
-            <column name="product_id" type="bigint">
+            <column name="external_id" type="VARCHAR(100)"/>
+            <column name="client_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="account_no" type="varchar(20)">
-                <constraints nullable="false" unique="true"/>
-            </column>
-            <column name="balance" type="decimal(19,6)" defaultValue="0.00">
+            <column name="group_id" type="BIGINT"/>
+            <column name="product_id" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
-            <column name="overdraft_amount" type="decimal(19,6)" defaultValue="0.00"/>
-            <column name="status" type="varchar(50)" defaultValue="PENDING">
+            <column name="field_officer_id" type="BIGINT"/>
+            <column name="status_enum" type="SMALLINT"
+                    defaultValueNumeric="100"> <!-- 100=Pending, 300=Active, 600=Closed -->
                 <constraints nullable="false"/>
             </column>
-            <!-- Auditing fields -->
-            <column name="createdby_id" type="bigint"/>
-            <column name="created_date" type="datetime"/>
-            <column name="lastmodifiedby_id" type="bigint"/>
-            <column name="lastmodified_date" type="datetime"/>
+            <column name="account_type_enum" type="SMALLINT" defaultValueNumeric="1"> <!-- 1=Individual, 2=Group -->
+                <constraints nullable="false"/>
+            </column>
+            <column name="submitted_on_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="submitted_by" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="approved_on_date" type="DATE"/>
+            <column name="approved_by" type="BIGINT"/>
+            <column name="activated_on_date" type="DATE"/>
+            <column name="activated_by" type="BIGINT"/>
+            <column name="closed_on_date" type="DATE"/>
+            <column name="closed_by" type="BIGINT"/>
+            <column name="currency_code" type="VARCHAR(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency_digits" type="SMALLINT" defaultValueNumeric="2">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency_multiplesof" type="SMALLINT"/>
+            <column name="account_balance_derived" type="DECIMAL(19,6)" defaultValueNumeric="0.00">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_deposits_derived" type="DECIMAL(19,6)" defaultValueNumeric="0.00">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_withdrawals_derived" type="DECIMAL(19,6)" defaultValueNumeric="0.00">
+                <constraints nullable="false"/>
+            </column>
+            <column name="overdraft_limit" type="DECIMAL(19,6)" defaultValueNumeric="0.00"/>
+            <column name="created_date" type="DATE"/>
+            <column name="created_by" type="BIGINT"/>
+            <column name="lastmodified_date" type="DATE"/>
+            <column name="lastmodified_by" type="BIGINT"/>
         </createTable>
+        <addUniqueConstraint tableName="m_current_account" columnNames="account_no"
+                             constraintName="current_account_account_no_UNIQUE"/>
+        <addUniqueConstraint tableName="m_current_account" columnNames="external_id"
+                             constraintName="current_account_external_id_UNIQUE"/>
+    </changeSet>
 
-        <!-- Add foreign keys (links to existing tables like m_client) -->
+    <!-- Foreign Keys and Indexes for Current Account Table -->
+    <changeSet id="999-3" author="custom">
         <addForeignKeyConstraint baseTableName="m_current_account" baseColumnNames="client_id"
-                                 constraintName="fk_current_account_client" referencedTableName="m_client"
+                                 constraintName="FK_current_account_client" referencedTableName="m_client"
+                                 referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="m_current_account" baseColumnNames="group_id"
+                                 constraintName="FK_current_account_group" referencedTableName="m_group"
                                  referencedColumnNames="id"/>
         <addForeignKeyConstraint baseTableName="m_current_account" baseColumnNames="product_id"
-                                 constraintName="fk_current_account_product"
-                                 referencedTableName="m_current_account_product"
+                                 constraintName="FK_current_account_product"
+                                 referencedTableName="m_current_account_product" referencedColumnNames="id"/>
+        <!-- Indexes (non-unique keys) -->
+        <createIndex tableName="m_current_account" indexName="FK_current_account_client">
+            <column name="client_id"/>
+        </createIndex>
+        <createIndex tableName="m_current_account" indexName="FK_current_account_group">
+            <column name="group_id"/>
+        </createIndex>
+        <createIndex tableName="m_current_account" indexName="FK_current_account_product">
+            <column name="product_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Current Account Transactions Table -->
+    <changeSet id="999-4" author="custom">
+        <createTable tableName="m_current_account_transaction">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="current_account_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="transaction_type_enum" type="SMALLINT"> <!-- 1=Deposit, 2=Withdrawal, 3=Fee, etc. -->
+                <constraints nullable="false"/>
+            </column>
+            <column name="transaction_date" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="amount" type="DECIMAL(19,6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="running_balance_derived" type="DECIMAL(19,6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cumulative_balance_derived" type="DECIMAL(19,6)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="DATETIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_reversed" type="TINYINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ref_no" type="VARCHAR(100)"/>
+            <column name="note" type="TEXT"/>
+        </createTable>
+    </changeSet>
+
+    <!-- Foreign Keys and Indexes for Transactions Table -->
+    <changeSet id="999-5" author="custom">
+        <addForeignKeyConstraint baseTableName="m_current_account_transaction" baseColumnNames="current_account_id"
+                                 constraintName="FK_current_account_transaction" referencedTableName="m_current_account"
                                  referencedColumnNames="id"/>
+        <!-- Index (non-unique key) -->
+        <createIndex tableName="m_current_account_transaction" indexName="FK_current_account_transaction">
+            <column name="current_account_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Add permissions for current account -->
+    <changeSet id="999-6" author="custom">
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="CREATE_CURRENTACCOUNTPRODUCT"/>
+            <column name="entity_name" value="CURRENTACCOUNTPRODUCT"/>
+            <column name="action_name" value="CREATE"/>
+            <column name="can_maker_checker" valueNumeric="0"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="READ_CURRENTACCOUNTPRODUCT"/>
+            <column name="entity_name" value="CURRENTACCOUNTPRODUCT"/>
+            <column name="action_name" value="READ"/>
+            <column name="can_maker_checker" valueNumeric="0"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="UPDATE_CURRENTACCOUNTPRODUCT"/>
+            <column name="entity_name" value="CURRENTACCOUNTPRODUCT"/>
+            <column name="action_name" value="UPDATE"/>
+            <column name="can_maker_checker" valueNumeric="0"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="DELETE_CURRENTACCOUNTPRODUCT"/>
+            <column name="entity_name" value="CURRENTACCOUNTPRODUCT"/>
+            <column name="action_name" value="DELETE"/>
+            <column name="can_maker_checker" valueNumeric="0"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="CREATE_CURRENTACCOUNT"/>
+            <column name="entity_name" value="CURRENTACCOUNT"/>
+            <column name="action_name" value="CREATE"/>
+            <column name="can_maker_checker" valueNumeric="1"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="READ_CURRENTACCOUNT"/>
+            <column name="entity_name" value="CURRENTACCOUNT"/>
+            <column name="action_name" value="READ"/>
+            <column name="can_maker_checker" valueNumeric="0"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="UPDATE_CURRENTACCOUNT"/>
+            <column name="entity_name" value="CURRENTACCOUNT"/>
+            <column name="action_name" value="UPDATE"/>
+            <column name="can_maker_checker" valueNumeric="1"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="DELETE_CURRENTACCOUNT"/>
+            <column name="entity_name" value="CURRENTACCOUNT"/>
+            <column name="action_name" value="DELETE"/>
+            <column name="can_maker_checker" valueNumeric="1"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="ACTIVATE_CURRENTACCOUNT"/>
+            <column name="entity_name" value="CURRENTACCOUNT"/>
+            <column name="action_name" value="ACTIVATE"/>
+            <column name="can_maker_checker" valueNumeric="1"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="portfolio"/>
+            <column name="code" value="CLOSE_CURRENTACCOUNT"/>
+            <column name="entity_name" value="CURRENTACCOUNT"/>
+            <column name="action_name" value="CLOSE"/>
+            <column name="can_maker_checker" valueNumeric="1"/>
+        </insert>
+        <insert tableName="m_permission">
+            <column name="grouping" value="transaction_currentaccount"/>
+            <column name="code" value="CREATE_CURRENTACCOUNTTRANSACTION"/>
+            <column name="entity_name" value="CURRENTACCOUNTTRANSACTION"/>
+            <column name="action_name" value="CREATE"/>
+            <column name="can_maker_checker" valueNumeric="1"/>
+        </insert>
     </changeSet>
 
 </databaseChangeLog>
