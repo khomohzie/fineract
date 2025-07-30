@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,15 +19,7 @@
 package org.apache.fineract.test.stepdef.saving;
 
 import io.cucumber.java.en.And;
-import java.io.IOException;
-import java.math.BigDecimal;
-import org.apache.fineract.client.models.PostClientsResponse;
-import org.apache.fineract.client.models.PostSavingsAccountTransactionsRequest;
-import org.apache.fineract.client.models.PostSavingsAccountTransactionsResponse;
-import org.apache.fineract.client.models.PostSavingsAccountsAccountIdRequest;
-import org.apache.fineract.client.models.PostSavingsAccountsAccountIdResponse;
-import org.apache.fineract.client.models.PostSavingsAccountsRequest;
-import org.apache.fineract.client.models.PostSavingsAccountsResponse;
+import org.apache.fineract.client.models.*;
 import org.apache.fineract.client.services.SavingsAccountApi;
 import org.apache.fineract.client.services.SavingsAccountTransactionsApi;
 import org.apache.fineract.test.factory.SavingsAccountRequestFactory;
@@ -35,6 +27,9 @@ import org.apache.fineract.test.stepdef.AbstractStepDef;
 import org.apache.fineract.test.support.TestContextKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import retrofit2.Response;
+
+import java.io.IOException;
+import java.math.BigDecimal;
 
 public class SavingsAccountStepDef extends AbstractStepDef {
 
@@ -80,7 +75,7 @@ public class SavingsAccountStepDef extends AbstractStepDef {
                 .approvedOnDate(approvedOnDate);
 
         Response<PostSavingsAccountsAccountIdResponse> approveSavingsAccountResponse = savingsAccountApi
-                .handleCommands6(savingsAccountID, approveSavingsAccountRequest, "approve").execute();
+                .handleCommands7(savingsAccountID, approveSavingsAccountRequest, "approve").execute();
         testContext().set(TestContextKey.EUR_SAVINGS_ACCOUNT_APPROVE_RESPONSE, approveSavingsAccountResponse);
     }
 
@@ -94,7 +89,7 @@ public class SavingsAccountStepDef extends AbstractStepDef {
                 .approvedOnDate(approvedOnDate);
 
         Response<PostSavingsAccountsAccountIdResponse> approveSavingsAccountResponse = savingsAccountApi
-                .handleCommands6(savingsAccountID, approveSavingsAccountRequest, "approve").execute();
+                .handleCommands7(savingsAccountID, approveSavingsAccountRequest, "approve").execute();
         testContext().set(TestContextKey.USD_SAVINGS_ACCOUNT_APPROVE_RESPONSE, approveSavingsAccountResponse);
     }
 
@@ -108,7 +103,7 @@ public class SavingsAccountStepDef extends AbstractStepDef {
                 .activatedOnDate(activatedOnDate);
 
         Response<PostSavingsAccountsAccountIdResponse> activateSavingsAccountResponse = savingsAccountApi
-                .handleCommands6(savingsAccountID, activateSavingsAccountRequest, "activate").execute();
+                .handleCommands7(savingsAccountID, activateSavingsAccountRequest, "activate").execute();
         testContext().set(TestContextKey.EUR_SAVINGS_ACCOUNT_ACTIVATED_RESPONSE, activateSavingsAccountResponse);
     }
 
@@ -122,7 +117,7 @@ public class SavingsAccountStepDef extends AbstractStepDef {
                 .activatedOnDate(activatedOnDate);
 
         Response<PostSavingsAccountsAccountIdResponse> activateSavingsAccountResponse = savingsAccountApi
-                .handleCommands6(savingsAccountID, activateSavingsAccountRequest, "activate").execute();
+                .handleCommands7(savingsAccountID, activateSavingsAccountRequest, "activate").execute();
         testContext().set(TestContextKey.USD_SAVINGS_ACCOUNT_ACTIVATED_RESPONSE, activateSavingsAccountResponse);
     }
 
@@ -136,7 +131,7 @@ public class SavingsAccountStepDef extends AbstractStepDef {
                 .transactionDate(depositDate).transactionAmount(BigDecimal.valueOf(depositAmount));
 
         Response<PostSavingsAccountTransactionsResponse> depositResponse = savingsAccountTransactionsApi
-                .transaction2(savingsAccountID, depositRequest, "deposit").execute();
+                .transaction3(savingsAccountID, depositRequest, "deposit").execute();
         testContext().set(TestContextKey.EUR_SAVINGS_ACCOUNT_DEPOSIT_RESPONSE, depositResponse);
     }
 
@@ -150,7 +145,7 @@ public class SavingsAccountStepDef extends AbstractStepDef {
                 .transactionDate(depositDate).transactionAmount(BigDecimal.valueOf(depositAmount));
 
         Response<PostSavingsAccountTransactionsResponse> depositResponse = savingsAccountTransactionsApi
-                .transaction2(savingsAccountID, depositRequest, "deposit").execute();
+                .transaction3(savingsAccountID, depositRequest, "deposit").execute();
         testContext().set(TestContextKey.USD_SAVINGS_ACCOUNT_DEPOSIT_RESPONSE, depositResponse);
     }
 
@@ -164,7 +159,7 @@ public class SavingsAccountStepDef extends AbstractStepDef {
                 .transactionDate(transcationDate).transactionAmount(BigDecimal.valueOf(withdrawAmount));
 
         Response<PostSavingsAccountTransactionsResponse> withdrawalResponse = savingsAccountTransactionsApi
-                .transaction2(savingsAccountID, withdrawRequest, "withdrawal").execute();
+                .transaction3(savingsAccountID, withdrawRequest, "withdrawal").execute();
         testContext().set(TestContextKey.EUR_SAVINGS_ACCOUNT_WITHDRAW_RESPONSE, withdrawalResponse);
     }
 
@@ -178,7 +173,7 @@ public class SavingsAccountStepDef extends AbstractStepDef {
                 .transactionDate(transcationDate).transactionAmount(BigDecimal.valueOf(withdrawAmount));
 
         Response<PostSavingsAccountTransactionsResponse> withdrawalResponse = savingsAccountTransactionsApi
-                .transaction2(savingsAccountID, withdrawRequest, "withdrawal").execute();
+                .transaction3(savingsAccountID, withdrawRequest, "withdrawal").execute();
         testContext().set(TestContextKey.USD_SAVINGS_ACCOUNT_WITHDRAW_RESPONSE, withdrawalResponse);
     }
 }

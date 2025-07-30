@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,37 +18,15 @@
  */
 package org.apache.fineract.test.stepdef.loan;
 
-import static org.apache.fineract.test.data.paymenttype.DefaultPaymentType.AUTOPAY;
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.google.gson.Gson;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.nio.charset.StandardCharsets;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.fineract.avro.loan.v1.LoanTransactionAdjustmentDataV1;
 import org.apache.fineract.avro.loan.v1.LoanTransactionDataV1;
-import org.apache.fineract.client.models.GetLoansLoanIdRepaymentPeriod;
-import org.apache.fineract.client.models.GetLoansLoanIdResponse;
-import org.apache.fineract.client.models.GetLoansLoanIdTransactions;
-import org.apache.fineract.client.models.GetLoansLoanIdTransactionsTemplateResponse;
-import org.apache.fineract.client.models.GetLoansLoanIdTransactionsTransactionIdResponse;
-import org.apache.fineract.client.models.GetUsersUserIdResponse;
-import org.apache.fineract.client.models.PostLoansLoanIdTransactionsRequest;
-import org.apache.fineract.client.models.PostLoansLoanIdTransactionsResponse;
-import org.apache.fineract.client.models.PostLoansLoanIdTransactionsTransactionIdRequest;
-import org.apache.fineract.client.models.PostLoansResponse;
-import org.apache.fineract.client.models.PostUsersResponse;
+import org.apache.fineract.client.models.*;
 import org.apache.fineract.client.services.LoanTransactionsApi;
 import org.apache.fineract.client.services.LoansApi;
 import org.apache.fineract.client.services.UsersApi;
@@ -68,6 +46,19 @@ import org.apache.fineract.test.stepdef.AbstractStepDef;
 import org.apache.fineract.test.support.TestContextKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import retrofit2.Response;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static org.apache.fineract.test.data.paymenttype.DefaultPaymentType.AUTOPAY;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 public class LoanRepaymentStepDef extends AbstractStepDef {
@@ -161,7 +152,7 @@ public class LoanRepaymentStepDef extends AbstractStepDef {
 
         Response<PostUsersResponse> createUserResponse = testContext().get(TestContextKey.CREATED_SIMPLE_USER_RESPONSE);
         Long createdUserId = createUserResponse.body().getResourceId();
-        Response<GetUsersUserIdResponse> user = usersApi.retrieveOne31(createdUserId).execute();
+        Response<GetUsersUserIdResponse> user = usersApi.retrieveOne33(createdUserId).execute();
         ErrorHelper.checkSuccessfulApiCall(user);
         String authorizationString = user.body().getUsername() + ":" + PWD_USER_WITH_ROLE;
         Base64 base64 = new Base64();
@@ -222,7 +213,7 @@ public class LoanRepaymentStepDef extends AbstractStepDef {
 
         Response<PostUsersResponse> createUserResponse = testContext().get(TestContextKey.CREATED_SIMPLE_USER_RESPONSE);
         Long createdUserId = createUserResponse.body().getResourceId();
-        Response<GetUsersUserIdResponse> user = usersApi.retrieveOne31(createdUserId).execute();
+        Response<GetUsersUserIdResponse> user = usersApi.retrieveOne33(createdUserId).execute();
         ErrorHelper.checkSuccessfulApiCall(user);
         String authorizationString = user.body().getUsername() + ":" + PWD_USER_WITH_ROLE;
         Base64 base64 = new Base64();
@@ -489,7 +480,7 @@ public class LoanRepaymentStepDef extends AbstractStepDef {
     }
 
     public void checkMakeTransactionForbidden(Response<PostLoansLoanIdTransactionsResponse> transactionUndoResponse,
-            Integer httpStatusCodeExpected, String developerMessageExpected) throws IOException {
+                                              Integer httpStatusCodeExpected, String developerMessageExpected) throws IOException {
         String string = transactionUndoResponse.errorBody().string();
         ErrorResponse errorResponse = GSON.fromJson(string, ErrorResponse.class);
         Integer httpStatusCodeActual = errorResponse.getHttpStatusCode();
@@ -688,7 +679,7 @@ public class LoanRepaymentStepDef extends AbstractStepDef {
                             loanTransactionAdjustmentDataV1 -> loanTransactionAdjustmentDataV1.getNewTransactionDetail().getAmount())
                     .isEqualTo(BigDecimal.valueOf(amountValue));
             eventAssertionBuilder.extractingData(
-                    loanTransactionAdjustmentDataV1 -> loanTransactionAdjustmentDataV1.getNewTransactionDetail().getExternalOwnerId())
+                            loanTransactionAdjustmentDataV1 -> loanTransactionAdjustmentDataV1.getNewTransactionDetail().getExternalOwnerId())
                     .isEqualTo(externalOwnerId);
         }
 

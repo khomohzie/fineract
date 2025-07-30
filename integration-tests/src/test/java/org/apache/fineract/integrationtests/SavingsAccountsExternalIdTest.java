@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,19 +18,7 @@
  */
 package org.apache.fineract.integrationtests;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
-import org.apache.fineract.client.models.DeleteSavingsAccountsAccountIdResponse;
-import org.apache.fineract.client.models.PostSavingsAccountsAccountIdRequest;
-import org.apache.fineract.client.models.PostSavingsAccountsAccountIdResponse;
-import org.apache.fineract.client.models.PostSavingsAccountsRequest;
-import org.apache.fineract.client.models.PostSavingsAccountsResponse;
-import org.apache.fineract.client.models.PutSavingsAccountsAccountIdRequest;
-import org.apache.fineract.client.models.PutSavingsAccountsAccountIdResponse;
-import org.apache.fineract.client.models.SavingsAccountData;
+import org.apache.fineract.client.models.*;
 import org.apache.fineract.client.util.Calls;
 import org.apache.fineract.integrationtests.client.IntegrationTest;
 import org.junit.jupiter.api.Order;
@@ -38,6 +26,12 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import retrofit2.Response;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 public class SavingsAccountsExternalIdTest extends IntegrationTest {
 
@@ -87,7 +81,7 @@ public class SavingsAccountsExternalIdTest extends IntegrationTest {
         request.setLocale(locale);
         request.setApprovedOnDate(formattedDate);
         Response<PostSavingsAccountsAccountIdResponse> response = okR(
-                fineractClient().savingsAccounts.handleCommands7(EXTERNAL_ID, request, "approve"));
+                fineractClient().savingsAccounts.handleCommands8(EXTERNAL_ID, request, "approve"));
 
         assertThat(response.isSuccessful()).isTrue();
         assertThat(response.body()).isNotNull();
@@ -101,7 +95,7 @@ public class SavingsAccountsExternalIdTest extends IntegrationTest {
         request.dateFormat(dateFormat);
         request.setLocale(locale);
         request.setActivatedOnDate(formattedDate);
-        Response<SavingsAccountData> response = okR(fineractClient().savingsAccounts.retrieveOne26(EXTERNAL_ID, false, null, "all"));
+        Response<SavingsAccountData> response = okR(fineractClient().savingsAccounts.retrieveOne28(EXTERNAL_ID, false, null, "all"));
 
         assertThat(response.isSuccessful()).isTrue();
         assertThat(response.body()).isNotNull();
@@ -115,7 +109,7 @@ public class SavingsAccountsExternalIdTest extends IntegrationTest {
         LOG.info("------------------------------ UNDO APPROVAL SAVINGS ACCOUNT ---------------------------------------");
         PostSavingsAccountsAccountIdRequest request = new PostSavingsAccountsAccountIdRequest();
         Response<PostSavingsAccountsAccountIdResponse> response = okR(
-                fineractClient().savingsAccounts.handleCommands7(EXTERNAL_ID, request, "undoapproval"));
+                fineractClient().savingsAccounts.handleCommands8(EXTERNAL_ID, request, "undoapproval"));
 
         assertThat(response.isSuccessful()).isTrue();
         assertThat(response.body()).isNotNull();
@@ -129,7 +123,7 @@ public class SavingsAccountsExternalIdTest extends IntegrationTest {
         request.dateFormat(dateFormat);
         request.setLocale(locale);
         request.setActivatedOnDate(formattedDate);
-        Response<SavingsAccountData> response = okR(fineractClient().savingsAccounts.retrieveOne26(EXTERNAL_ID, false, null, "all"));
+        Response<SavingsAccountData> response = okR(fineractClient().savingsAccounts.retrieveOne28(EXTERNAL_ID, false, null, "all"));
 
         assertThat(response.isSuccessful()).isTrue();
         assertThat(response.body()).isNotNull();
@@ -159,7 +153,7 @@ public class SavingsAccountsExternalIdTest extends IntegrationTest {
         request.setLocale(locale);
         request.setActivatedOnDate(formattedDate);
         Response<SavingsAccountData> response = Calls
-                .executeU(fineractClient().savingsAccounts.retrieveOne26(EXTERNAL_ID, false, null, "all"));
+                .executeU(fineractClient().savingsAccounts.retrieveOne28(EXTERNAL_ID, false, null, "all"));
 
         assertThat(response.raw().code()).isEqualTo(404);
     }

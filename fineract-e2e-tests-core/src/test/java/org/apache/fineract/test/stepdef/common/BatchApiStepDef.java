@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,47 +18,14 @@
  */
 package org.apache.fineract.test.stepdef.common;
 
-import static org.apache.fineract.test.stepdef.datatable.DatatablesStepDef.DATATABLE_NAME;
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.google.gson.Gson;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.fineract.avro.loan.v1.LoanSchedulePeriodDataV1;
-import org.apache.fineract.client.models.BatchRequest;
-import org.apache.fineract.client.models.BatchResponse;
-import org.apache.fineract.client.models.GetClientsClientIdResponse;
-import org.apache.fineract.client.models.GetLoansLoanIdResponse;
-import org.apache.fineract.client.models.GetLoansLoanIdStatus;
-import org.apache.fineract.client.models.GetLoansLoanIdTransactions;
-import org.apache.fineract.client.models.GetUsersUserIdResponse;
-import org.apache.fineract.client.models.Header;
-import org.apache.fineract.client.models.PostClientsRequest;
-import org.apache.fineract.client.models.PostCreateRescheduleLoansRequest;
-import org.apache.fineract.client.models.PostLoansLoanIdChargesRequest;
-import org.apache.fineract.client.models.PostLoansLoanIdRequest;
-import org.apache.fineract.client.models.PostLoansLoanIdTransactionsRequest;
-import org.apache.fineract.client.models.PostLoansLoanIdTransactionsResponse;
-import org.apache.fineract.client.models.PostLoansRequest;
-import org.apache.fineract.client.models.PostLoansResponse;
-import org.apache.fineract.client.models.PostUpdateRescheduleLoansRequest;
-import org.apache.fineract.client.models.PostUsersResponse;
+import org.apache.fineract.client.models.*;
 import org.apache.fineract.client.services.BatchApiApi;
 import org.apache.fineract.client.services.ClientApi;
 import org.apache.fineract.client.services.LoansApi;
@@ -80,6 +47,15 @@ import org.apache.fineract.test.stepdef.AbstractStepDef;
 import org.apache.fineract.test.support.TestContextKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import retrofit2.Response;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+
+import static org.apache.fineract.test.stepdef.datatable.DatatablesStepDef.DATATABLE_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 public class BatchApiStepDef extends AbstractStepDef {
@@ -429,7 +405,7 @@ public class BatchApiStepDef extends AbstractStepDef {
 
     @When("Batch API call with steps: rescheduleLoan from {string} to {string} submitted on date: {string}, approveReschedule on date: {string} runs with enclosingTransaction: {string}")
     public void runBatchApiCreateAndApproveLoanReschedule(String fromDateStr, String toDateStr, String submittedOnDate,
-            String approvedOnDate, String enclosingTransaction) throws IOException {
+                                                          String approvedOnDate, String enclosingTransaction) throws IOException {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT);
         String idempotencyKey = UUID.randomUUID().toString();
         Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
@@ -458,7 +434,7 @@ public class BatchApiStepDef extends AbstractStepDef {
 
     @When("Batch API call with created user and with steps: rescheduleLoan from {string} to {string} submitted on date: {string}, approveReschedule on date: {string} runs with enclosingTransaction: {string}")
     public void runBatchApiCreateAndApproveLoanRescheduleWithGivenUser(String fromDateStr, String toDateStr, String submittedOnDate,
-            String approvedOnDate, String enclosingTransaction) throws IOException {
+                                                                       String approvedOnDate, String enclosingTransaction) throws IOException {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMAT);
         String idempotencyKey = UUID.randomUUID().toString();
         Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
@@ -468,7 +444,7 @@ public class BatchApiStepDef extends AbstractStepDef {
 
         Response<PostUsersResponse> createUserResponse = testContext().get(TestContextKey.CREATED_SIMPLE_USER_RESPONSE);
         Long createdUserId = createUserResponse.body().getResourceId();
-        Response<GetUsersUserIdResponse> user = usersApi.retrieveOne31(createdUserId).execute();
+        Response<GetUsersUserIdResponse> user = usersApi.retrieveOne33(createdUserId).execute();
         ErrorHelper.checkSuccessfulApiCall(user);
         String authorizationString = user.body().getUsername() + ":" + PWD_USER_WITH_ROLE;
         Base64 base64 = new Base64();
@@ -508,7 +484,7 @@ public class BatchApiStepDef extends AbstractStepDef {
 
     @When("Batch API call with created user and the following data results a {int} error and a {string} error message:")
     public void runBatchApiCreateAndApproveLoanRescheduleWithGivenUserLockedByCobError(int errorCodeExpected, String errorMessageType,
-            DataTable table) throws IOException {
+                                                                                       DataTable table) throws IOException {
         String idempotencyKey = UUID.randomUUID().toString();
         Response<PostLoansResponse> loanResponse = testContext().get(TestContextKey.LOAN_CREATE_RESPONSE);
         Long loanId = loanResponse.body().getLoanId();
@@ -528,7 +504,7 @@ public class BatchApiStepDef extends AbstractStepDef {
 
         Response<PostUsersResponse> createUserResponse = testContext().get(TestContextKey.CREATED_SIMPLE_USER_RESPONSE);
         Long createdUserId = createUserResponse.body().getResourceId();
-        Response<GetUsersUserIdResponse> user = usersApi.retrieveOne31(createdUserId).execute();
+        Response<GetUsersUserIdResponse> user = usersApi.retrieveOne33(createdUserId).execute();
         ErrorHelper.checkSuccessfulApiCall(user);
         String authorizationString = user.body().getUsername() + ":" + PWD_USER_WITH_ROLE;
         Base64 base64 = new Base64();
@@ -574,7 +550,7 @@ public class BatchApiStepDef extends AbstractStepDef {
 
         Response<PostUsersResponse> createUserResponse = testContext().get(TestContextKey.CREATED_SIMPLE_USER_RESPONSE);
         Long createdUserId = createUserResponse.body().getResourceId();
-        Response<GetUsersUserIdResponse> user = usersApi.retrieveOne31(createdUserId).execute();
+        Response<GetUsersUserIdResponse> user = usersApi.retrieveOne33(createdUserId).execute();
         ErrorHelper.checkSuccessfulApiCall(user);
         String authorizationString = user.body().getUsername() + ":" + PWD_USER_WITH_ROLE;
         Base64 base64 = new Base64();
@@ -607,7 +583,7 @@ public class BatchApiStepDef extends AbstractStepDef {
     }
 
     private BatchRequest createLoanReschedule(Long requestId, Long loanId, String fromDateStr, String toDateStr, String submittedOnDate,
-            String idempotencyKey, Long referenceId) {
+                                              String idempotencyKey, Long referenceId) {
         PostCreateRescheduleLoansRequest rescheduleLoansRequest = LoanRequestFactory.defaultLoanRescheduleCreateRequest(loanId, fromDateStr,
                 toDateStr);
         rescheduleLoansRequest.setSubmittedOnDate(submittedOnDate);

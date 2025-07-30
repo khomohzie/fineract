@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,18 +18,14 @@
  */
 package org.apache.fineract.integrationtests.common.loans;
 
-import org.apache.fineract.client.models.GetLoanProductsProductIdResponse;
-import org.apache.fineract.client.models.GetLoanProductsTemplateResponse;
-import org.apache.fineract.client.models.PostLoanProductsRequest;
-import org.apache.fineract.client.models.PostLoanProductsResponse;
-import org.apache.fineract.client.models.PutLoanProductsProductIdRequest;
-import org.apache.fineract.client.models.PutLoanProductsProductIdResponse;
+import org.apache.fineract.client.models.*;
 import org.apache.fineract.client.util.Calls;
 import org.apache.fineract.integrationtests.common.FineractClientHelper;
 
 public class LoanProductHelper {
 
-    public LoanProductHelper() {}
+    public LoanProductHelper() {
+    }
 
     public PostLoanProductsResponse createLoanProduct(PostLoanProductsRequest request) {
         return Calls.ok(FineractClientHelper.getFineractClient().loanProducts.createLoanProduct(request));
@@ -52,6 +48,6 @@ public class LoanProductHelper {
     }
 
     public GetLoanProductsTemplateResponse getLoanProductTemplate(boolean isProductMixTemplate) {
-        return Calls.ok(FineractClientHelper.getFineractClient().loanProducts.retrieveTemplate11(isProductMixTemplate));
+        return Calls.ok(FineractClientHelper.getFineractClient().loanProducts.retrieveTemplate13(isProductMixTemplate));
     }
 }

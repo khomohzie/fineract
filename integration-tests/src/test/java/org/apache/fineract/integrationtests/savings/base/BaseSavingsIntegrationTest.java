@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,6 +23,19 @@ import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.specification.ResponseSpecification;
+import lombok.AllArgsConstructor;
+import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.fineract.client.models.*;
+import org.apache.fineract.infrastructure.configuration.api.GlobalConfigurationConstants;
+import org.apache.fineract.integrationtests.client.IntegrationTest;
+import org.apache.fineract.integrationtests.common.*;
+import org.apache.fineract.integrationtests.common.accounting.JournalEntryHelper;
+import org.apache.fineract.integrationtests.common.system.CodeHelper;
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -31,33 +44,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import lombok.AllArgsConstructor;
-import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.fineract.client.models.BusinessDateUpdateRequest;
-import org.apache.fineract.client.models.PostSavingsAccountTransactionsRequest;
-import org.apache.fineract.client.models.PostSavingsAccountTransactionsResponse;
-import org.apache.fineract.client.models.PostSavingsAccountsAccountIdRequest;
-import org.apache.fineract.client.models.PostSavingsAccountsAccountIdResponse;
-import org.apache.fineract.client.models.PostSavingsAccountsRequest;
-import org.apache.fineract.client.models.PostSavingsAccountsResponse;
-import org.apache.fineract.client.models.PostSavingsProductsRequest;
-import org.apache.fineract.client.models.PostSavingsProductsResponse;
-import org.apache.fineract.client.models.PutGlobalConfigurationsRequest;
-import org.apache.fineract.client.models.SavingsAccountData;
-import org.apache.fineract.client.models.SavingsAccountTransactionData;
-import org.apache.fineract.infrastructure.configuration.api.GlobalConfigurationConstants;
-import org.apache.fineract.integrationtests.client.IntegrationTest;
-import org.apache.fineract.integrationtests.common.BusinessDateHelper;
-import org.apache.fineract.integrationtests.common.ClientHelper;
-import org.apache.fineract.integrationtests.common.GlobalConfigurationHelper;
-import org.apache.fineract.integrationtests.common.SchedulerJobHelper;
-import org.apache.fineract.integrationtests.common.Utils;
-import org.apache.fineract.integrationtests.common.accounting.JournalEntryHelper;
-import org.apache.fineract.integrationtests.common.system.CodeHelper;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
 
 @Slf4j
 public class BaseSavingsIntegrationTest extends IntegrationTest {
@@ -143,13 +129,13 @@ public class BaseSavingsIntegrationTest extends IntegrationTest {
     protected PostSavingsAccountsAccountIdResponse approveSavingsAccount(Long savingsId, String date) {
         PostSavingsAccountsAccountIdRequest request = new PostSavingsAccountsAccountIdRequest().dateFormat(DATETIME_PATTERN).locale("en")
                 .approvedOnDate(date);
-        return ok(fineractClient().savingsAccounts.handleCommands6(savingsId, request, "approve"));
+        return ok(fineractClient().savingsAccounts.handleCommands7(savingsId, request, "approve"));
     }
 
     protected PostSavingsAccountsAccountIdResponse activateSavingsAccount(Long savingsId, String date) {
         PostSavingsAccountsAccountIdRequest request = new PostSavingsAccountsAccountIdRequest().dateFormat(DATETIME_PATTERN).locale("en")
                 .activatedOnDate(date);
-        return ok(fineractClient().savingsAccounts.handleCommands6(savingsId, request, "activate"));
+        return ok(fineractClient().savingsAccounts.handleCommands7(savingsId, request, "activate"));
     }
 
     protected PostSavingsAccountTransactionsResponse deposit(Long savingsId, String date, BigDecimal amount) {
@@ -158,15 +144,15 @@ public class BaseSavingsIntegrationTest extends IntegrationTest {
                 .locale("en") //
                 .paymentTypeId(1).transactionAmount(amount) //
                 .transactionDate(date); //
-        return ok(fineractClient().savingsTransactions.transaction2(savingsId, request, "deposit"));
+        return ok(fineractClient().savingsTransactions.transaction3(savingsId, request, "deposit"));
     }
 
     protected SavingsAccountData getSavingsAccount(Long savingsId) {
-        return ok(fineractClient().savingsAccounts.retrieveOne25(savingsId, false, null, "transactions"));
+        return ok(fineractClient().savingsAccounts.retrieveOne27(savingsId, false, null, "transactions"));
     }
 
     protected List<SavingsAccountTransactionData> getTransactions(Long savingsId) {
-        return ok(fineractClient().savingsAccounts.retrieveOne25(savingsId, false, null, "transactions")).getTransactions();
+        return ok(fineractClient().savingsAccounts.retrieveOne27(savingsId, false, null, "transactions")).getTransactions();
     }
 
     protected void verifyNoTransactions(Long savingsId) {
@@ -174,7 +160,7 @@ public class BaseSavingsIntegrationTest extends IntegrationTest {
     }
 
     protected void verifyTransactions(Long savingsId, Transaction... transactions) {
-        SavingsAccountData savingsDetails = ok(fineractClient().savingsAccounts.retrieveOne25(savingsId, false, null, "transactions"));
+        SavingsAccountData savingsDetails = ok(fineractClient().savingsAccounts.retrieveOne27(savingsId, false, null, "transactions"));
         if (transactions == null || transactions.length == 0) {
             Assertions.assertTrue(savingsDetails.getTransactions().isEmpty(), "No transaction is expected on savings account " + savingsId);
         } else {
