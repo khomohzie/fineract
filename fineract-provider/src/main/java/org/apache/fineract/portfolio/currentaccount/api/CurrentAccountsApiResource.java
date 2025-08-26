@@ -43,7 +43,7 @@ import java.util.Collection;
  * POST /currentaccounts/{accountId}/transactions?command=deposit - Make deposit
  * POST /currentaccounts/{accountId}/transactions?command=withdrawal - Make withdrawal
  */
-@Path("/currentaccounts")
+@Path("/v1/currentaccounts")
 @Component
 @Scope("singleton")
 @Tag(name = "Current Accounts", description = "Current Accounts API")

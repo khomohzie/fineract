@@ -94,18 +94,20 @@
             <column name="account_type_enum" type="SMALLINT" defaultValueNumeric="1"> <!-- 1=Individual, 2=Group -->
                 <constraints nullable="false"/>
             </column>
-            <column name="submitted_on_date" type="DATE">
+            <column name="submittedon_date" type="DATE">
                 <constraints nullable="false"/>
             </column>
-            <column name="submitted_by" type="BIGINT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="approved_on_date" type="DATE"/>
-            <column name="approved_by" type="BIGINT"/>
-            <column name="activated_on_date" type="DATE"/>
-            <column name="activated_by" type="BIGINT"/>
-            <column name="closed_on_date" type="DATE"/>
-            <column name="closed_by" type="BIGINT"/>
+            <column name="submittedon_userid" type="BIGINT"/>
+            <column name="approvedon_date" type="DATE"/>
+            <column name="approvedon_userid" type="BIGINT"/>
+            <column name="rejectedon_date" type="DATE"/>
+            <column name="rejectedon_userid" type="BIGINT"/>
+            <column name="withdrawnon_date" type="DATE"/>
+            <column name="withdrawnon_userid" type="BIGINT"/>
+            <column name="activatedon_date" type="DATE"/>
+            <column name="activatedon_userid" type="BIGINT"/>
+            <column name="closedon_date" type="DATE"/>
+            <column name="closedon_userid" type="BIGINT"/>
             <column name="currency_code" type="VARCHAR(3)">
                 <constraints nullable="false"/>
             </column>

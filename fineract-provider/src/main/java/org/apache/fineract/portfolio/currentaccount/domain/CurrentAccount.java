@@ -52,16 +52,16 @@ public class CurrentAccount extends AbstractPersistableCustom {
     @Column(name = "account_type_enum", nullable = false)
     private Integer accountType;
 
-    @Column(name = "submitted_on_date", nullable = false)
+    @Column(name = "submittedon_date", nullable = false)
     private LocalDate submittedOnDate;
 
-    @Column(name = "approved_on_date")
+    @Column(name = "approvedon_date")
     private LocalDate approvedOnDate;
 
-    @Column(name = "activated_on_date")
+    @Column(name = "activatedon_date")
     private LocalDate activatedOnDate;
 
-    @Column(name = "closed_on_date")
+    @Column(name = "closedon_date")
     private LocalDate closedOnDate;
 
     // Currency information
